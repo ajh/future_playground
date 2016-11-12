@@ -8,14 +8,17 @@ use std::io::prelude::*;
 use tokio_core::reactor::Core;
 
 fn main() {
+    // get `lines`, a Stream over stdin lines
     let stdin = std::io::stdin();
     let lock = stdin.lock();
-
     let lines = stream::iter(lock.lines());
 
+    // create cpu pool for running futures
     let mut pool_builder = futures_cpupool::Builder::new();
     let pool = pool_builder.create();
 
+    // for each line, run transforms in cpu pool. `workers` is a stream of futures returned by cpu
+    // pool.
     let workers = lines.map(|l| {
         let future = finished::<String, ()>(l)
             .map(|l| l.to_uppercase())
@@ -27,13 +30,16 @@ fn main() {
         pool.spawn(future)
     });
 
+    // create a tokio reactor
     let mut core = Core::new().unwrap();
     let handle = core.handle();
 
+    // add cpu pool futures to reactor
     let server = workers.for_each(|future| {
         handle.spawn(future);
         Ok(())
     });
 
+    // run all the stuff
     core.run(server).unwrap();
 }
