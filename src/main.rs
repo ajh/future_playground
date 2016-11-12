@@ -12,17 +12,22 @@ fn main() {
     let mut core = Core::new().unwrap();
 
     // open file
-    let mut f = File::open("README.md").unwrap();
+    let f = File::open("README.md").unwrap();
     let reader = BufReader::new(f);
 
     // convert to stream
+    // reader.lines() is std::io::Lines<std::io::BufReader<std::fs::File>>
     let lines = stream::iter(reader.lines());
+    // lines is futures::stream::IterStream<std::io::Lines<std::io::BufReader<std::fs::File>>>
 
     // for lines, upcase them and print them
     let print_upcased_lines = lines.and_then(|line| {
         println!("{}", line.to_uppercase());
+        finished(())
     });
 
+    let future = print_upcased_lines.for_each(|_| Ok(()));
+
     // start core
-    core.run(print_upcased_lines).unwrap();
+    core.run(future).unwrap();
 }
