@@ -3,7 +3,6 @@ extern crate futures_cpupool;
 extern crate tokio_core;
 
 use futures::*;
-use futures::stream::Stream;
 use std::io::prelude::*;
 use tokio_core::reactor::Core;
 
