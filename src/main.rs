@@ -5,12 +5,17 @@ extern crate tokio_core;
 use futures::*;
 use std::io::prelude::*;
 use tokio_core::reactor::Core;
+use std::fs::File;
+use std::io::BufReader;
 
 fn main() {
     // get `lines`, a Stream over stdin lines
     let stdin = std::io::stdin();
     let lock = stdin.lock();
     let lines = stream::iter(lock.lines());
+
+    let readme = BufReader::new(File::open("README.md").unwrap());
+    let lines = lines.select(stream::iter(readme.lines()));
 
     // create cpu pool for running futures
     let mut pool_builder = futures_cpupool::Builder::new();
