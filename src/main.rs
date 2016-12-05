@@ -17,6 +17,15 @@ fn main() {
     let readme = BufReader::new(File::open("README.md").unwrap());
     let lines = lines.select(stream::iter(readme.lines()));
 
+    if false {
+        with_thread_pool(lines);
+    }
+    else {
+        without_thread_pool(lines);
+    }
+}
+
+fn with_thread_pool(lines: futures::stream::Select<futures::stream::IterStream<std::io::Lines<std::io::StdinLock>>, futures::stream::IterStream<std::io::Lines<std::io::BufReader<std::fs::File>>>>) {
     // create cpu pool for running futures
     let mut pool_builder = futures_cpupool::Builder::new();
     let pool = pool_builder.create();
@@ -46,4 +55,15 @@ fn main() {
 
     // run all the stuff
     core.run(server).unwrap();
+}
+
+fn without_thread_pool(lines: futures::stream::Select<futures::stream::IterStream<std::io::Lines<std::io::StdinLock>>, futures::stream::IterStream<std::io::Lines<std::io::BufReader<std::fs::File>>>>) {
+    // create a tokio reactor
+    let mut core = Core::new().unwrap();
+
+    // run all the stuff
+    core.run(lines.for_each(|l| {
+        println!("{}", l.to_uppercase());
+        Ok(())
+    })).unwrap();
 }
